@@ -25,6 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usbd_cdc_if.h"
+#include "usart.h"
 
 /* USER CODE END Includes */
 
@@ -159,7 +161,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
     osDelay(500);
   }
   /* USER CODE END StartDefaultTask */
@@ -175,10 +177,19 @@ void StartDefaultTask(void *argument)
 void StartUSBSendTask(void *argument)
 {
   /* USER CODE BEGIN StartUSBSendTask */
+  osStatus_t status;
+  modbusPacket modbus_packet;
+  uint8_t res;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    status = osMessageQueueGet(USB_queueHandle, &modbus_packet, NULL, osWaitForever);
+    if ((status == osOK) && (modbus_packet.data_len > 0)){
+      res = CDC_Transmit_FS(&modbus_packet.data[0], modbus_packet.data_len);
+      if ( res != USBD_OK){
+        res = CDC_Transmit_FS(&modbus_packet.data[0], modbus_packet.data_len);
+      }
+    }
   }
   /* USER CODE END StartUSBSendTask */
 }
@@ -193,10 +204,34 @@ void StartUSBSendTask(void *argument)
 void StartModbusSendTask(void *argument)
 {
   /* USER CODE BEGIN StartModbusSendTask */
+  modbusPacket transmit_modbus_packet;
+  modbusPacket receive_modbus_packet;
+  uint8_t i = 0;
+  osStatus_t status;
+  uint8_t modbus_byte;
+  HAL_StatusTypeDef hal_status_transmit;
+  HAL_StatusTypeDef hal_status_receive;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    status = osMessageQueueGet(modbus_queueHandle, &transmit_modbus_packet, NULL, 50);
+    if (status == osOK){
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+      if ((hal_status_transmit = HAL_UART_Transmit(&huart2, &transmit_modbus_packet.data[0], transmit_modbus_packet.data_len, 20)) == HAL_OK){
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+        while ((hal_status_receive = HAL_UART_Receive(&huart2, &modbus_byte, 1, 20)) == HAL_OK){
+          receive_modbus_packet.data[i++] = modbus_byte;
+        }
+        receive_modbus_packet.data_len = i;
+        i = 0;
+        if ( receive_modbus_packet.data_len > 0){
+          status = osMessageQueuePut(USB_queueHandle, &receive_modbus_packet, 0U, 0U);
+          if (status == osOK){
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
+          }
+        }
+      }
+    }
   }
   /* USER CODE END StartModbusSendTask */
 }
