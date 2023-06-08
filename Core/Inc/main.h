@@ -36,10 +36,6 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef struct{
-  uint8_t data[256];
-  uint8_t data_len;
-} modbusPacket;
 
 /* USER CODE END ET */
 

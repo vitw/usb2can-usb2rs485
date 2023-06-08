@@ -26,7 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
-#include "usart.h"
+#include "rs485_driver.h"
 
 /* USER CODE END Includes */
 
@@ -56,39 +56,40 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for usbSendTask */
-osThreadId_t usbSendTaskHandle;
-const osThreadAttr_t usbSendTask_attributes = {
-  .name = "usbSendTask",
+/* Definitions for usb_tx_Task */
+osThreadId_t usb_tx_TaskHandle;
+const osThreadAttr_t usb_tx_Task_attributes = {
+  .name = "usb_tx_Task",
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for modbusSendTask */
-osThreadId_t modbusSendTaskHandle;
-const osThreadAttr_t modbusSendTask_attributes = {
-  .name = "modbusSendTask",
+/* Definitions for rs485_tx_Task */
+osThreadId_t rs485_tx_TaskHandle;
+const osThreadAttr_t rs485_tx_Task_attributes = {
+  .name = "rs485_tx_Task",
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for USB_queue */
-osMessageQueueId_t USB_queueHandle;
-const osMessageQueueAttr_t USB_queue_attributes = {
-  .name = "USB_queue"
+/* Definitions for usb_tx_queue */
+osMessageQueueId_t usb_tx_queueHandle;
+const osMessageQueueAttr_t usb_tx_queue_attributes = {
+  .name = "usb_tx_queue"
 };
-/* Definitions for modbus_queue */
-osMessageQueueId_t modbus_queueHandle;
-const osMessageQueueAttr_t modbus_queue_attributes = {
-  .name = "modbus_queue"
+/* Definitions for rs485_tx_queue */
+osMessageQueueId_t rs485_tx_queueHandle;
+const osMessageQueueAttr_t rs485_tx_queue_attributes = {
+  .name = "rs485_tx_queue"
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+static void usb_transmit();
 
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void StartUSBSendTask(void *argument);
-void StartModbusSendTask(void *argument);
+void StartUsbTxTask(void *argument);
+void StartRs485TxTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -116,11 +117,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
-  /* creation of USB_queue */
-  USB_queueHandle = osMessageQueueNew (8, 256, &USB_queue_attributes);
+  /* creation of usb_tx_queue */
+  usb_tx_queueHandle = osMessageQueueNew (8, 256, &usb_tx_queue_attributes);
 
-  /* creation of modbus_queue */
-  modbus_queueHandle = osMessageQueueNew (8, 256, &modbus_queue_attributes);
+  /* creation of rs485_tx_queue */
+  rs485_tx_queueHandle = osMessageQueueNew (8, 256, &rs485_tx_queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -130,11 +131,11 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of usbSendTask */
-  usbSendTaskHandle = osThreadNew(StartUSBSendTask, NULL, &usbSendTask_attributes);
+  /* creation of usb_tx_Task */
+  usb_tx_TaskHandle = osThreadNew(StartUsbTxTask, NULL, &usb_tx_Task_attributes);
 
-  /* creation of modbusSendTask */
-  modbusSendTaskHandle = osThreadNew(StartModbusSendTask, NULL, &modbusSendTask_attributes);
+  /* creation of rs485_tx_Task */
+  rs485_tx_TaskHandle = osThreadNew(StartRs485TxTask, NULL, &rs485_tx_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -161,83 +162,74 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
+    // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
     osDelay(500);
   }
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartUSBSendTask */
+/* USER CODE BEGIN Header_StartUsbTxTask */
 /**
-* @brief Function implementing the usbSendTask thread.
+* @brief Function implementing the usb_tx_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartUSBSendTask */
-void StartUSBSendTask(void *argument)
+/* USER CODE END Header_StartUsbTxTask */
+void StartUsbTxTask(void *argument)
 {
   /* USER CODE BEGIN StartUSBSendTask */
   osStatus_t status;
   modbusPacket modbus_packet;
-  uint8_t res;
   /* Infinite loop */
   for(;;)
   {
-    status = osMessageQueueGet(USB_queueHandle, &modbus_packet, NULL, osWaitForever);
+    status = osMessageQueueGet(usb_tx_queueHandle, &modbus_packet, NULL, osWaitForever);
     if ((status == osOK) && (modbus_packet.data_len > 0)){
-      res = CDC_Transmit_FS(&modbus_packet.data[0], modbus_packet.data_len);
-      if ( res != USBD_OK){
-        res = CDC_Transmit_FS(&modbus_packet.data[0], modbus_packet.data_len);
-      }
+      usb_transmit(&modbus_packet);
     }
   }
-  /* USER CODE END StartUSBSendTask */
+  /* USER CODE END StartUsbTxTask */
 }
 
-/* USER CODE BEGIN Header_StartModbusSendTask */
+/* USER CODE BEGIN Header_StartRs485TxTask */
 /**
-* @brief Function implementing the modbusSendTask thread.
+* @brief Function implementing the rs485_tx_Task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartModbusSendTask */
-void StartModbusSendTask(void *argument)
+/* USER CODE END Header_StartRs485TxTask */
+void StartRs485TxTask(void *argument)
 {
   /* USER CODE BEGIN StartModbusSendTask */
   modbusPacket transmit_modbus_packet;
   modbusPacket receive_modbus_packet;
-  uint8_t i = 0;
   osStatus_t status;
-  uint8_t modbus_byte;
-  HAL_StatusTypeDef hal_status_transmit;
-  HAL_StatusTypeDef hal_status_receive;
+  uint8_t res;
   /* Infinite loop */
   for(;;)
   {
-    status = osMessageQueueGet(modbus_queueHandle, &transmit_modbus_packet, NULL, 50);
+    status = osMessageQueueGet(rs485_tx_queueHandle, &transmit_modbus_packet, NULL, 50);
     if (status == osOK){
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-      if ((hal_status_transmit = HAL_UART_Transmit(&huart2, &transmit_modbus_packet.data[0], transmit_modbus_packet.data_len, 20)) == HAL_OK){
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-        while ((hal_status_receive = HAL_UART_Receive(&huart2, &modbus_byte, 1, 20)) == HAL_OK){
-          receive_modbus_packet.data[i++] = modbus_byte;
-        }
-        receive_modbus_packet.data_len = i;
-        i = 0;
-        if ( receive_modbus_packet.data_len > 0){
-          status = osMessageQueuePut(USB_queueHandle, &receive_modbus_packet, 0U, 0U);
-          if (status == osOK){
-            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_6);
-          }
-        }
+      res = rs485_transmit(&transmit_modbus_packet);
+      if (res > 0){
+        continue;
       }
+      res = rs485_receive(&receive_modbus_packet);
+      if (res > 0){
+        continue;
+      }
+      osMessageQueuePut(usb_tx_queueHandle, &receive_modbus_packet, 0U, 0U);
     }
   }
-  /* USER CODE END StartModbusSendTask */
+  /* USER CODE END StartRs485TxTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+static void usb_transmit(modbusPacket * packet){
+  while(CDC_Transmit_FS(&packet->data[0], packet->data_len) != USBD_OK){
+    ;
+  }
+}
 /* USER CODE END Application */
 

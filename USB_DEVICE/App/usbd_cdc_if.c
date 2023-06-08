@@ -23,7 +23,7 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "cmsis_os.h"
-#include "main.h"
+#include "rs485_driver.h"
 
 /* USER CODE END INCLUDE */
 
@@ -33,7 +33,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-extern osMessageQueueId_t modbus_queueHandle;
+extern osMessageQueueId_t rs485_tx_queueHandle;
 
 /* USER CODE END PV */
 
@@ -268,7 +268,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
       packet.data[i] = *(Buf + i);
     }
     packet.data_len = *Len;
-    osMessageQueuePut(modbus_queueHandle, (void *)&packet, 0U, 0U);
+    osMessageQueuePut(rs485_tx_queueHandle, (void *)&packet, 0U, 0U);
   }
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &UserRxBufferFS[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
