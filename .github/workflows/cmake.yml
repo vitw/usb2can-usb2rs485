@@ -23,7 +23,7 @@ jobs:
     
     - name: Update compilers on Linux
       run: |
-            sudo apt-get install gcc-arm-none-eabi
+            sudo apt-get install gcc-arm-none-eabi ninja-build
             export CC=/usr/bin/arm-none-eabi-gcc CXX=/usr/bin/arm-none-eabi-g++
 
     - name: Configure CMake
