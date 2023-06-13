@@ -3,6 +3,18 @@
 
 #include "stm32f1xx_hal.h"
 
+#define RS485_SPEED 9600
+
+typedef enum {
+    USB2RS485,
+    USB2CAN,
+}converter_mode;
+
+typedef struct{
+  uint8_t data_len;
+  uint8_t data[256];
+} dataPacket;
+
 #define LED_RUN_On()	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET)
 #define LED_RUN_Off()	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET)
 

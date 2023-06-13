@@ -27,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "rs485_driver.h"
+#include "can_driver.h"
+#include "board.h"
 
 /* USER CODE END Includes */
 
@@ -47,6 +49,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+converter_mode mode;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -70,6 +73,13 @@ const osThreadAttr_t rs485_tx_Task_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for can_tx_Task */
+osThreadId_t can_tx_TaskHandle;
+const osThreadAttr_t can_tx_Task_attributes = {
+  .name = "can_tx_Task",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for usb_tx_queue */
 osMessageQueueId_t usb_tx_queueHandle;
 const osMessageQueueAttr_t usb_tx_queue_attributes = {
@@ -79,6 +89,11 @@ const osMessageQueueAttr_t usb_tx_queue_attributes = {
 osMessageQueueId_t rs485_tx_queueHandle;
 const osMessageQueueAttr_t rs485_tx_queue_attributes = {
   .name = "rs485_tx_queue"
+};
+/* Definitions for can_tx_queue */
+osMessageQueueId_t can_tx_queueHandle;
+const osMessageQueueAttr_t can_tx_queue_attributes = {
+  .name = "can_tx_queue"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,6 +105,7 @@ static void usb_transmit();
 void StartDefaultTask(void *argument);
 void StartUsbTxTask(void *argument);
 void StartRs485TxTask(void *argument);
+void StartCanTxTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -123,6 +139,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of rs485_tx_queue */
   rs485_tx_queueHandle = osMessageQueueNew (8, 256, &rs485_tx_queue_attributes);
 
+  /* creation of can_tx_queue */
+  can_tx_queueHandle = osMessageQueueNew (8, 256, &can_tx_queue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -136,6 +155,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of rs485_tx_Task */
   rs485_tx_TaskHandle = osThreadNew(StartRs485TxTask, NULL, &rs485_tx_Task_attributes);
+
+  /* creation of can_tx_Task */
+  can_tx_TaskHandle = osThreadNew(StartCanTxTask, NULL, &can_tx_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -177,9 +199,9 @@ void StartDefaultTask(void *argument)
 /* USER CODE END Header_StartUsbTxTask */
 void StartUsbTxTask(void *argument)
 {
-  /* USER CODE BEGIN StartUSBSendTask */
+  /* USER CODE BEGIN StartUsbTxTask */
   osStatus_t status;
-  modbusPacket modbus_packet;
+  dataPacket modbus_packet;
   /* Infinite loop */
   for(;;)
   {
@@ -200,16 +222,16 @@ void StartUsbTxTask(void *argument)
 /* USER CODE END Header_StartRs485TxTask */
 void StartRs485TxTask(void *argument)
 {
-  /* USER CODE BEGIN StartModbusSendTask */
-  modbusPacket transmit_modbus_packet;
-  modbusPacket receive_modbus_packet;
+  /* USER CODE BEGIN StartRs485TxTask */
+  dataPacket transmit_modbus_packet;
+  dataPacket receive_modbus_packet;
   osStatus_t status;
   uint8_t res;
   /* Infinite loop */
   for(;;)
   {
     status = osMessageQueueGet(rs485_tx_queueHandle, &transmit_modbus_packet, NULL, 50);
-    if (status == osOK){
+    if (mode == USB2RS485 && status == osOK){
       res = rs485_transmit(&transmit_modbus_packet);
       if (res > 0){
         continue;
@@ -224,9 +246,41 @@ void StartRs485TxTask(void *argument)
   /* USER CODE END StartRs485TxTask */
 }
 
+/* USER CODE BEGIN Header_StartCanTxTask */
+/**
+* @brief Function implementing the can_tx_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCanTxTask */
+void StartCanTxTask(void *argument)
+{
+  /* USER CODE BEGIN StartCanTxTask */
+  dataPacket transmit_cmd;
+  osStatus_t status;
+  uint8_t res;
+  /* Infinite loop */
+  for(;;)
+  {
+    status = osMessageQueueGet(can_tx_queueHandle, &transmit_cmd, NULL, 50);
+    if (mode == USB2CAN && status == osOK){
+      res = can_transmit(&transmit_cmd);
+      if (res > 0){
+        continue;
+      }
+      // res = can_receive(&receive_modbus_packet);
+      // if (res > 0){
+      //   continue;
+      // }
+      // osMessageQueuePut(usb_tx_queueHandle, &receive_modbus_packet, 0U, 0U);
+    }
+  }
+  /* USER CODE END StartCanTxTask */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-static void usb_transmit(modbusPacket * packet){
+static void usb_transmit(dataPacket * packet){
   while(CDC_Transmit_FS(&packet->data[0], packet->data_len) != USBD_OK){
     ;
   }

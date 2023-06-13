@@ -78,6 +78,8 @@ target_link_options(
 
 target_sources(
     ${TARGET_NAME} PRIVATE
+    "Core/Src/can.c"
+    "Core/Src/can_driver.c"
     "Core/Src/freertos.c"
     "Core/Src/gpio.c"
     "Core/Src/main.c"
@@ -88,6 +90,7 @@ target_sources(
     "Core/Src/syscalls.c"
     "Core/Src/sysmem.c"
     "Core/Src/system_stm32f1xx.c"
+    "Core/Src/tim.c"
     "Core/Src/usart.c"
     "Core/Startup/startup_stm32f105rctx.s"
     "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c"
@@ -104,6 +107,7 @@ target_sources(
     "Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c"
     "Middlewares/Third_Party/FreeRTOS/Source/tasks.c"
     "Middlewares/Third_Party/FreeRTOS/Source/timers.c"
+    "Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c"
     "Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c"
     "Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.c"
     "Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c"

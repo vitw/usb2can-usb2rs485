@@ -4,7 +4,7 @@
 #include "rs485_driver.h"
 #include "cmsis_os.h"
 
-uint8_t rs485_transmit(const modbusPacket * const packet){
+uint8_t rs485_transmit(const dataPacket * const packet){
   HAL_StatusTypeDef transmit_status;
   LED_TX_On();
   RS485_TX();
@@ -16,7 +16,7 @@ uint8_t rs485_transmit(const modbusPacket * const packet){
   return 0;
 }
 
-uint8_t rs485_receive(modbusPacket *packet){
+uint8_t rs485_receive(dataPacket *packet){
   HAL_StatusTypeDef receive_status;
   osStatus_t status;
   uint8_t i = 0;

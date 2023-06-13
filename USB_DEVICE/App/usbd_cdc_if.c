@@ -24,6 +24,9 @@
 /* USER CODE BEGIN INCLUDE */
 #include "cmsis_os.h"
 #include "rs485_driver.h"
+#include "can_driver.h"
+#include "board.h"
+#include "string.h"
 
 /* USER CODE END INCLUDE */
 
@@ -34,6 +37,8 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 extern osMessageQueueId_t rs485_tx_queueHandle;
+extern osMessageQueueId_t can_tx_queueHandle;
+extern converter_mode mode;
 
 /* USER CODE END PV */
 
@@ -221,6 +226,13 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
+    {
+			if(*(uint32_t*)pbuf < RS485_SPEED) {
+        mode = USB2CAN;
+			} else {
+        mode = USB2RS485;
+			}
+    }
 
     break;
 
@@ -261,15 +273,21 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
+  dataPacket packet;
+  osMessageQueueId_t target_queue;
   /* USER CODE BEGIN 6 */
-  modbusPacket packet;
-  if (*Len >= 8){
-    for (int i = 0; i < *Len; i++){
-      packet.data[i] = *(Buf + i);
-    }
-    packet.data_len = *Len;
-    osMessageQueuePut(rs485_tx_queueHandle, (void *)&packet, 0U, 0U);
+  if (mode == USB2RS485 && *Len >= 8){
+    target_queue = rs485_tx_queueHandle;
+  }else if (mode == USB2CAN && *Len > 0){
+    target_queue = can_tx_queueHandle;
+  }else{
+    return USBD_FAIL;
   }
+
+  memcpy((void *)packet.data,(void *)Buf, *Len);
+  packet.data_len = *Len;
+  osMessageQueuePut(target_queue, (void *)&packet, 0U, 0U);
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &UserRxBufferFS[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
