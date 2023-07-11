@@ -24,7 +24,11 @@ uint8_t rs485_receive(dataPacket *packet){
   LED_RX_On();
   RS485_RX();
   while ((receive_status = HAL_UART_Receive(&huart2, &modbus_byte, 1, 20)) == HAL_OK){
-    packet->data[i++] = modbus_byte;
+    if (modbus_byte == 0){
+        continue;
+    }
+    packet->data[i] = modbus_byte;
+    i++;
   }
   LED_RX_Off();
   RS485_TX();
