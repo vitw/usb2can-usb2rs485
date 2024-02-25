@@ -77,7 +77,7 @@ const osThreadAttr_t rs485_tx_Task_attributes = {
 osThreadId_t can_tx_TaskHandle;
 const osThreadAttr_t can_tx_Task_attributes = {
   .name = "can_tx_Task",
-  .stack_size = 256 * 4,
+  .stack_size = 256 * 8,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for usb_tx_queue */
@@ -184,7 +184,11 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
+    if (mode == USB2CAN) {
+      LED_RUN_On();
+    }else{
+      LED_RUN_Off();
+    }
     osDelay(500);
   }
   /* USER CODE END StartDefaultTask */

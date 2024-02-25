@@ -273,9 +273,9 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
+  /* USER CODE BEGIN 6 */
   dataPacket packet;
   osMessageQueueId_t target_queue;
-  /* USER CODE BEGIN 6 */
   if (mode == USB2RS485 && *Len >= 8){
     target_queue = rs485_tx_queueHandle;
   }else if (mode == USB2CAN && *Len > 0){

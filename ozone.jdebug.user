@@ -1,0 +1,27 @@
+
+
+
+Breakpoint=/home/vdp/code/stm/usb2rs485/Core/Src/main.c:231, State=BP_STATE_ON
+OpenDocument="startup_stm32f105rctx.s", FilePath="/home/vdp/code/stm/usb2rs485/Core/Startup/startup_stm32f105rctx.s", Line=54
+OpenDocument="freertos.c", FilePath="/home/vdp/code/stm/usb2rs485/Core/Src/freertos.c", Line=160
+OpenDocument="main.c", FilePath="/home/vdp/code/stm/usb2rs485/Core/Src/main.c", Line=61
+OpenDocument="stm32f1xx_hal_can.c", FilePath="/home/vdp/code/stm/usb2rs485/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c", Line=1293
+OpenDocument="tasks.c", FilePath="/home/vdp/code/stm/usb2rs485/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3455
+OpenDocument="can_driver.c", FilePath="/home/vdp/code/stm/usb2rs485/Core/Src/can_driver.c", Line=61
+OpenDocument="stm32f1xx_it.c", FilePath="/home/vdp/code/stm/usb2rs485/Core/Src/stm32f1xx_it.c", Line=78
+OpenToolbar="Debug", Floating=0, x=0, y=0
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=668, h=226, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=2, w=668, h=363, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Memory 1", DockArea=BOTTOM, x=1, y=0, w=957, h=138, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x0
+OpenWindow="Local Data", DockArea=RIGHT, x=0, y=1, w=668, h=193, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=300, h=784, FilterBarShown=1, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=958, h=138, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
+TableHeader="Local Data", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Location";"Size";"Type";"Scope"], ColWidths=[147;210;100;100;245;122]
+TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Source"], ColWidths=[1281;100;100;100;320]
+TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
+TableHeader="Task List", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Name";"Run Count";"Priority";"Status";"Timeout";"Stack Info";"ID";"Mutex Count";"Notified Value";"Notify State"], ColWidths=[110;110;110;110;110;110;110;110;110;110]
+TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Auto";"Name";"Value";"Description"], ColWidths=[100;100;105;347]
+TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;358]
+TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[308;140;149;100;212;100]
